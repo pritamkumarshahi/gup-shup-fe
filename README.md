@@ -13,9 +13,8 @@ GupShup is a real-time chat application that allows users to communicate instant
 - [Installation](#installation)
 - [Running the Application](#running-the-application)
 - [Environment Variables](#environment-variables)
-- [Deployment](#deployment)
 - [Contributing](#contributing)
-- [License]("contributing")
+- [License]("License")
 
 
 ## Features
@@ -28,7 +27,7 @@ GupShup is a real-time chat application that allows users to communicate instant
 - User profile management.
 
 
-## Technologies Used
+## Technologies
 - **React.js:** Frontend framework for building the user interface.
 - **React Router:** For handling navigation.
 - **Redux:** For state management (if applicable).
