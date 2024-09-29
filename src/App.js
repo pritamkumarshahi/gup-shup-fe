@@ -74,14 +74,14 @@ const darkTheme = {
   text: '#ffffff',
 };
 
-// Custom hook to check for token
-const useAuth = () => {
-  const token = localStorage.getItem('token'); // Replace 'token' with your token key
-  return !!token; // Returns true if token exists, false otherwise
-};
-
 const App = () => {
   const [theme, setTheme] = useState(lightTheme);
+
+  const useAuth = () => {
+    const token = localStorage.getItem('token'); // Replace 'token' with your token key
+    return !!token; // Returns true if token exists, false otherwise
+  };
+
   const isAuthenticated = useAuth(); // Check for token
 
   // Function to toggle between dark and light themes
@@ -102,7 +102,6 @@ const App = () => {
                 <Nav>
                   <Link to="/">Features</Link>
                   <Link to="/privacy">Privacy Policy</Link>
-                  {/* Theme toggle button beside privacy link */}
                   <button onClick={toggleTheme} aria-label="Toggle theme">
                     {theme === lightTheme ? <FaMoon /> : <FaSun />}
                   </button>

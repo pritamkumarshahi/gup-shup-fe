@@ -1,4 +1,3 @@
-// Chat.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
@@ -17,12 +16,20 @@ const Sidebar = styled.div`
   border-right: 1px solid ${({ theme }) => (theme.body === '#ffffff' ? '#ccc' : '#555')};
 `;
 
+const HeaderIcons = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+`;
+
 const SearchInput = styled.input`
-  width: 100%;
+  width: calc(100% - 20px);  // Ensure the input doesn't span the full width of the container
   padding: 10px;
   border: 1px solid ${({ theme }) => (theme.body === '#ffffff' ? '#ccc' : '#555')};
   border-radius: 5px;
   margin-bottom: 20px;
+  margin-right: 10px;  // Adds spacing to the right side
   background-color: ${({ theme }) => (theme.body === '#ffffff' ? '#f9f9f9' : '#444')};
   color: ${({ theme }) => theme.text};
 
@@ -32,7 +39,10 @@ const SearchInput = styled.input`
   }
 `;
 
+
 const UserItem = styled.div`
+  display: flex;
+  align-items: center;
   padding: 10px;
   border: 1px solid ${({ theme }) => (theme.body === '#ffffff' ? '#ccc' : '#555')};
   border-radius: 5px;
@@ -43,6 +53,19 @@ const UserItem = styled.div`
   &:hover {
     background-color: ${({ theme }) => (theme.body === '#ffffff' ? '#f0f0f0' : '#444')};
   }
+`;
+
+const ProfileIcon = styled.div`
+  width: 35px;
+  height: 35px;
+  background-color: #007bff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin-right: 10px;
+  font-weight: bold;
 `;
 
 const ChatArea = styled.div`
@@ -76,7 +99,7 @@ const Message = styled.div`
   }
 
   &.received {
-    background-color: #fff;
+    background-color: #f1f0f0;
     align-self: flex-start;
     margin-right: auto;
   }
@@ -116,22 +139,6 @@ const Button = styled.button`
   }
 `;
 
-const HeaderIcons = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-
-  svg {
-    margin-left: 10px;
-    cursor: pointer;
-    color: ${({ theme }) => theme.text};
-
-    &:hover {
-      opacity: 0.7;
-    }
-  }
-`;
-
 const Chat = () => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -145,29 +152,34 @@ const Chat = () => {
       const response = await axios.get('http://localhost:5001/api/auth/users', {
         headers: { Authorization: token },
       });
-      setUsers(response.data);
+      const filteredUsers = response.data.filter((user) => user._id !== senderId); // Exclude self
+      setUsers(filteredUsers);
     };
 
     const fetchMessages = async () => {
-        console.log(token, "token")
       if (selectedUser) {
-        const response = await axios.get(`http://localhost:5001/api/chat?recipientId=${selectedUser._id}`, {
-          headers: { Authorization: token },
-        });
-
+        const response = await axios.get(
+          `http://localhost:5001/api/chat?recipientId=${selectedUser._id}`,
+          {
+            headers: { Authorization: token },
+          }
+        );
         setMessages(response.data.messages);
       }
     };
 
     fetchUsers();
     fetchMessages();
-  }, [token, selectedUser]);
+  }, [token, selectedUser, senderId]);
 
   const sendMessage = async (e) => {
     e.preventDefault();
     if (text.trim() && selectedUser) {
-    console.log(selectedUser, "selectedUser");
-      const newMessage = { text, participants: [senderId, selectedUser._id], sender: senderId };
+      const newMessage = {
+        text,
+        participants: [senderId, selectedUser._id],
+        sender: senderId,
+      };
       setMessages([...messages, { text, type: 'sent' }]);
 
       await axios.post('http://localhost:5001/api/chat/create', newMessage, {
@@ -177,12 +189,18 @@ const Chat = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.clear(); // Clear local storage
+    window.location.href = '/login'; // Redirect to login page
+  };
+
   return (
     <ChatContainer>
       <Sidebar>
         <HeaderIcons>
           <FaUserCircle size={24} />
           <FaCog size={24} />
+          <Button onClick={handleLogout}>Logout</Button>
         </HeaderIcons>
         <SearchInput type="text" placeholder="Search users..." />
         {users.map((user) => (
@@ -191,6 +209,15 @@ const Chat = () => {
             selected={selectedUser && selectedUser._id === user._id}
             onClick={() => setSelectedUser(user)}
           >
+            {user.profileImage ? (
+              <img
+                src={user.profileImage}
+                alt={`${user.name}'s profile`}
+                style={{ width: '35px', height: '35px', borderRadius: '50%', marginRight: '10px' }}
+              />
+            ) : (
+              <ProfileIcon>{user.name[0]}</ProfileIcon>
+            )}
             {user.name} ({user.email})
           </UserItem>
         ))}
@@ -198,7 +225,10 @@ const Chat = () => {
       <ChatArea>
         <MessagesContainer>
           {messages?.map((msg, index) => (
-            <Message key={index} className={msg.sender === senderId ? 'sent' : 'received'}>
+            <Message
+              key={index}
+              className={msg.sender === senderId ? 'sent' : 'received'}
+            >
               {msg.text}
             </Message>
           ))}
