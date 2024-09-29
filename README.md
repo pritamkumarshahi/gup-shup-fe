@@ -1,6 +1,7 @@
 # GupShup
 
 ## Overview
+[DO LIVE GupShup](https://gup-shup-fe-gamma.vercel.app/login)
 
 GupShup is a real-time chat application that allows users to communicate instantly. This repository contains the frontend code built with React.js.
 
