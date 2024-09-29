@@ -3,9 +3,10 @@ import axios from 'axios';
 import styled from 'styled-components';
 import { FaUserCircle, FaCog } from 'react-icons/fa';
 
+
 const ChatContainer = styled.div`
   display: flex;
-  height: 100vh; // Full height
+  height: 100vh;
   background-color: ${({ theme }) => theme.body};
   color: ${({ theme }) => theme.text};
 `;
@@ -24,12 +25,12 @@ const HeaderIcons = styled.div`
 `;
 
 const SearchInput = styled.input`
-  width: calc(100% - 20px);  // Ensure the input doesn't span the full width of the container
+  width: calc(100% - 20px);  
   padding: 10px;
   border: 1px solid ${({ theme }) => (theme.body === '#ffffff' ? '#ccc' : '#555')};
   border-radius: 5px;
   margin-bottom: 20px;
-  margin-right: 10px;  // Adds spacing to the right side
+  margin-right: 10px;  
   background-color: ${({ theme }) => (theme.body === '#ffffff' ? '#f9f9f9' : '#444')};
   color: ${({ theme }) => theme.text};
 
@@ -39,7 +40,6 @@ const SearchInput = styled.input`
   }
 `;
 
-
 const UserItem = styled.div`
   display: flex;
   align-items: center;
@@ -48,10 +48,11 @@ const UserItem = styled.div`
   border-radius: 5px;
   margin: 5px 0;
   cursor: pointer;
-  background-color: ${({ selected }) => (selected ? '#dcf8c6' : 'transparent')};
+  background-color: ${({ selected, theme }) =>
+    selected ? (theme.body === '#ffffff' ? '#dcf8c6' : '#333') : 'transparent'};
 
   &:hover {
-    background-color: ${({ theme }) => (theme.body === '#ffffff' ? '#f0f0f0' : '#444')};
+    background-color: ${({ theme }) => (theme.body === '#ffffff' ? '#f0f0f0' : '#555')};
   }
 `;
 
@@ -91,15 +92,16 @@ const Message = styled.div`
   border-radius: 8px;
   max-width: 70%;
   position: relative;
+  color: ${({ theme }) => theme.text};
 
   &.sent {
-    background-color: #dcf8c6;
+    background-color: ${({ theme }) => (theme.body === '#ffffff' ? '#dcf8c6' : '#005c0a')};
     align-self: flex-end;
     margin-left: auto;
   }
 
   &.received {
-    background-color: #f1f0f0;
+    background-color: ${({ theme }) => (theme.body === '#ffffff' ? '#f1f0f0' : '#444')};
     align-self: flex-start;
     margin-right: auto;
   }
@@ -149,7 +151,7 @@ const Chat = () => {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const response = await axios.get('http://localhost:5001/api/auth/users', {
+      const response = await axios.get('http://localhost:3000/api/auth/users', {
         headers: { Authorization: token },
       });
       const filteredUsers = response.data.filter((user) => user._id !== senderId); // Exclude self
@@ -159,7 +161,7 @@ const Chat = () => {
     const fetchMessages = async () => {
       if (selectedUser) {
         const response = await axios.get(
-          `http://localhost:5001/api/chat?recipientId=${selectedUser._id}`,
+          `http://localhost:3000/api/chat?recipientId=${selectedUser._id}`,
           {
             headers: { Authorization: token },
           }
@@ -182,7 +184,7 @@ const Chat = () => {
       };
       setMessages([...messages, { text, type: 'sent' }]);
 
-      await axios.post('http://localhost:5001/api/chat/create', newMessage, {
+      await axios.post('http://localhost:3000/api/chat/create', newMessage, {
         headers: { Authorization: token },
       });
       setText('');
@@ -191,7 +193,7 @@ const Chat = () => {
 
   const handleLogout = () => {
     localStorage.clear(); // Clear local storage
-    window.location.href = '/login'; // Redirect to login page
+    window.location.href = '/'; // Redirect to login page
   };
 
   return (

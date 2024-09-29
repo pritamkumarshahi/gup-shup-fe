@@ -10,7 +10,7 @@ const Container = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: calc(100vh - 110px);
   background-color: ${({ theme }) => theme.body};
   color: ${({ theme }) => theme.text};
 `;
@@ -98,7 +98,7 @@ const Footer = styled.div`
   }
 `;
 
-const Login = () => {
+const Login = ({ onLoginSuccess }) => {
   const dispatch = useDispatch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -108,7 +108,9 @@ const Login = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(login({ email, password, keepSignedIn }, navigate));
+    dispatch(login({ email, password, keepSignedIn }, navigate)).then(() => {
+      onLoginSuccess(); // Call the success callback here
+    });
   };
 
   return (

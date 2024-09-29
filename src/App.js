@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Provider } from 'react-redux';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { FaSun, FaMoon } from 'react-icons/fa'; // Import Sun and Moon icons
 import store from './redux/store';
 import GlobalStyles from './styles/GlobalStyles';
@@ -9,6 +9,11 @@ import Login from './components/Login';
 import Signup from './components/Signup';
 import Chat from './components/Chat';
 import Profile from './components/Profile';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Loader from './components/Loader';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 
 // Styled components
 const AppContainer = styled.div`
@@ -19,7 +24,7 @@ const Header = styled.header`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
+  padding: 2rem 2rem;
   background-color: ${({ theme }) => theme.body};
   color: ${({ theme }) => theme.text};
   position: sticky;   /* Make header sticky */
@@ -77,12 +82,18 @@ const darkTheme = {
 const App = () => {
   const [theme, setTheme] = useState(lightTheme);
 
-  const useAuth = () => {
-    const token = localStorage.getItem('token'); // Replace 'token' with your token key
-    return !!token; // Returns true if token exists, false otherwise
-  };
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // track auth status
 
-  const isAuthenticated = useAuth(); // Check for token
+  useEffect(() => {
+    const token = localStorage.getItem('token'); 
+    if (token) {
+      setIsAuthenticated(true); // Update state if token exists
+    }
+  }, []);
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true); // Update state on login success
+  };
 
   // Function to toggle between dark and light themes
   const toggleTheme = () => {
@@ -95,9 +106,8 @@ const App = () => {
         <GlobalStyles />
         <Router>
           <AppContainer>
-            {
-              !isAuthenticated && (
-                <Header>
+            { !isAuthenticated &&
+              <Header>
                 <Logo>GupShup</Logo>
                 <Nav>
                   <Link to="/">Features</Link>
@@ -107,25 +117,37 @@ const App = () => {
                   </button>
                 </Nav>
               </Header>
-              )
             }
             <Routes>
+              {/* Redirect root path based on authentication */}
               {isAuthenticated ? (
-                // Redirect to Chat if authenticated
                 <Route path="/" element={<Navigate to="/chat" replace />} />
               ) : (
+                <Route path="/" element={<Navigate to="/login" replace />} />
+              )}
+
+              {/* Public routes */}
+              <Route path="/login" element={!isAuthenticated ? <Login onLoginSuccess={handleLoginSuccess}/> : <Navigate to="/chat" replace />} />
+              <Route path="/signup" element={!isAuthenticated ? <Signup /> : <Navigate to="/chat" replace />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/password-reset/:token" element={<ResetPassword />} />
+
+              {/* Protected routes */}
+              {isAuthenticated && (
                 <>
-                  <Route path="/" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/chat" element={<Chat />} />
+                  <Route path="/profile" element={<Profile />} />
                 </>
               )}
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/privacy" element={<div>Privacy Policy</div>} />
+
+              {/* Catch-all route */}
+              <Route path="*" element={<Navigate to={isAuthenticated ? "/chat" : "/login"} replace />} />
             </Routes>
           </AppContainer>
         </Router>
       </ThemeProvider>
+      <ToastContainer />
+      <Loader />
     </Provider>
   );
 };
