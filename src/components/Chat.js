@@ -141,6 +141,11 @@ const Button = styled.button`
   }
 `;
 
+const NoMessage = styled.div`
+  text-align: center;
+  color: ${({ theme }) => theme.text};
+`;
+
 const Chat = () => {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -226,14 +231,14 @@ const Chat = () => {
       </Sidebar>
       <ChatArea>
         <MessagesContainer>
-          {messages?.map((msg, index) => (
+          {messages && messages?.map((msg, index) => (
             <Message
               key={index}
               className={msg.sender === senderId ? 'sent' : 'received'}
             >
               {msg.text}
             </Message>
-          ))}
+          )) || <NoMessage>No Messages Found</NoMessage>}
         </MessagesContainer>
         <InputContainer onSubmit={sendMessage}>
           <Input

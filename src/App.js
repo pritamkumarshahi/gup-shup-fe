@@ -80,7 +80,7 @@ const darkTheme = {
 };
 
 const App = () => {
-  const [theme, setTheme] = useState(lightTheme);
+  const [theme, setTheme] = useState(darkTheme);
 
   const [isAuthenticated, setIsAuthenticated] = useState(false); // track auth status
 
