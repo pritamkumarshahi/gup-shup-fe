@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
+
 import axios from 'axios';
 import styled from 'styled-components';
-import { FaUserCircle, FaCog } from 'react-icons/fa';
-
+import { FaUserCircle, FaCog, FaArrowRight, FaEllipsisV } from 'react-icons/fa';
+import { showError } from '../redux/actions/notificationActions';
+import { showLoader, hideLoader } from '../redux/actions/loaderActions';
 
 const ChatContainer = styled.div`
   display: flex;
@@ -17,20 +20,22 @@ const Sidebar = styled.div`
   border-right: 1px solid ${({ theme }) => (theme.body === '#ffffff' ? '#ccc' : '#555')};
 `;
 
-const HeaderIcons = styled.div`
+const SmallerSidebar = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  gap: 10px;
+  flex-direction: column;
+  width: 20px;
+  padding: 20px;
+  border-right: 1px solid ${({ theme }) => (theme.body === '#ffffff' ? '#ccc' : '#555')};
 `;
 
 const SearchInput = styled.input`
-  width: calc(100% - 20px);  
+  width: calc(100% - 20px);
   padding: 10px;
   border: 1px solid ${({ theme }) => (theme.body === '#ffffff' ? '#ccc' : '#555')};
   border-radius: 5px;
   margin-bottom: 20px;
-  margin-right: 10px;  
+  margin-right: 10px;
   background-color: ${({ theme }) => (theme.body === '#ffffff' ? '#f9f9f9' : '#444')};
   color: ${({ theme }) => theme.text};
 
@@ -42,6 +47,7 @@ const SearchInput = styled.input`
 
 const UserItem = styled.div`
   display: flex;
+  gap: 10px;
   align-items: center;
   padding: 10px;
   border: 1px solid ${({ theme }) => (theme.body === '#ffffff' ? '#ccc' : '#555')};
@@ -76,6 +82,25 @@ const ChatArea = styled.div`
   padding: 20px;
 `;
 
+const ChatHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 15px;
+  border-bottom: 1px solid ${({ theme }) => (theme.body === '#ffffff' ? '#ccc' : '#555')};
+`;
+
+const ChatUserInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const ChatUserName = styled.span`
+  font-weight: bold;
+  color: ${({ theme }) => theme.text};
+`;
+
 const MessagesContainer = styled.div`
   flex: 1;
   overflow-y: auto;
@@ -87,43 +112,68 @@ const MessagesContainer = styled.div`
 `;
 
 const Message = styled.div`
-  margin: 10px 0;
-  padding: 10px;
-  border-radius: 8px;
-  max-width: 70%;
+  margin: 5px 10px;
+  padding: 10px 15px;
+  border-radius: 20px;
+  max-width: 55%;
   position: relative;
   color: ${({ theme }) => theme.text};
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 
   &.sent {
-    background-color: ${({ theme }) => (theme.body === '#ffffff' ? '#dcf8c6' : '#005c0a')};
+    background-color: ${({ theme }) => (theme.body === '#ffffff' ? '#dcf8c6' : '#007bff')};
     align-self: flex-end;
     margin-left: auto;
+    color: ${({ theme }) => (theme.body === '#ffffff' ? '#000' : '#fff')};
+    border-radius: 20px 20px 5px 20px;
   }
 
   &.received {
     background-color: ${({ theme }) => (theme.body === '#ffffff' ? '#f1f0f0' : '#444')};
     align-self: flex-start;
     margin-right: auto;
+    color: ${({ theme }) => (theme.body === '#ffffff' ? '#000' : '#fff')};
+    border-radius: 20px;
   }
 `;
 
 const InputContainer = styled.form`
   display: flex;
   align-items: center;
+  position: relative;
 `;
 
 const Input = styled.input`
+  height: 30px;
   flex: 1;
-  padding: 10px;
+  padding: 10px 40px 10px 15px;
   border: 1px solid ${({ theme }) => (theme.body === '#ffffff' ? '#ccc' : '#555')};
-  border-radius: 20px;
-  margin-right: 10px;
+  border-radius: 10px;
   background-color: ${({ theme }) => (theme.body === '#ffffff' ? '#fff' : '#444')};
   color: ${({ theme }) => theme.text};
 
   &:focus {
     outline: none;
     border-color: #007bff;
+
+    & + button {
+      svg {
+        color: #007bff;
+      }
+    }
+  }
+`;
+
+const IconButton = styled.button`
+  position: absolute;
+  right: 15px;
+  background: transparent;
+  border: none;
+  color: #6a6a6b;
+  cursor: pointer;
+
+  &:hover {
+    color: #999999;
   }
 `;
 
@@ -154,6 +204,8 @@ const Chat = () => {
   const token = localStorage.getItem('token');
   const senderId = localStorage.getItem('senderId');
 
+  const dispatch = useDispatch();
+
   useEffect(() => {
     const fetchUsers = async () => {
       const response = await axios.get('http://localhost:3000/api/auth/users', {
@@ -164,14 +216,29 @@ const Chat = () => {
     };
 
     const fetchMessages = async () => {
-      if (selectedUser) {
-        const response = await axios.get(
-          `http://localhost:3000/api/chat?recipientId=${selectedUser._id}`,
-          {
-            headers: { Authorization: token },
+      dispatch(showLoader())
+
+      try {
+        if (selectedUser) {
+          const response = await axios.get(
+            `http://localhost:3000/api/chat?recipientId=${selectedUser._id}`,
+            {
+              headers: { Authorization: token },
+            }
+          );
+          if(response.data.messages) {
+            dispatch(hideLoader())
+            setMessages(response.data.messages);
+          } else {
+            dispatch(hideLoader())
+            setMessages([]);
           }
-        );
-        setMessages(response.data.messages);
+          dispatch(hideLoader())
+        }
+      } catch (error) {
+          dispatch(hideLoader())
+          dispatch(showError(error.response.data.message))
+          setMessages([]);
       }
     };
 
@@ -189,27 +256,34 @@ const Chat = () => {
       };
       setMessages([...messages, { text, type: 'sent' }]);
 
-      await axios.post('http://localhost:3000/api/chat/create', newMessage, {
-        headers: { Authorization: token },
-      });
-      setText('');
+      try {
+        await axios.post('http://localhost:3000/api/chat/create', newMessage, {
+          headers: { Authorization: token },
+        });
+        setText('');
+      } catch (error) {
+        dispatch(showError(error.response.data.message))
+      }
+      
     }
   };
 
   const handleLogout = () => {
-    localStorage.clear(); // Clear local storage
-    window.location.href = '/'; // Redirect to login page
+    localStorage.clear();
+    window.location.href = '/';
   };
+
+  console.log(messages, "messages")
 
   return (
     <ChatContainer>
+      <SmallerSidebar>
+        <FaUserCircle size={24} />
+        <FaCog size={24} />
+        <Button onClick={handleLogout}>Logout</Button>
+      </SmallerSidebar>
       <Sidebar>
-        <HeaderIcons>
-          <FaUserCircle size={24} />
-          <FaCog size={24} />
-          <Button onClick={handleLogout}>Logout</Button>
-        </HeaderIcons>
-        <SearchInput type="text" placeholder="Search users..." />
+        <SearchInput type="text" placeholder="Search users.." />
         {users.map((user) => (
           <UserItem
             key={user._id}
@@ -225,31 +299,50 @@ const Chat = () => {
             ) : (
               <ProfileIcon>{user.name[0]}</ProfileIcon>
             )}
-            {user.name} ({user.email})
+            <div>{user.name}</div>
           </UserItem>
         ))}
       </Sidebar>
+
       <ChatArea>
-        <MessagesContainer>
-          {messages && messages?.map((msg, index) => (
-            <Message
-              key={index}
-              className={msg.sender === senderId ? 'sent' : 'received'}
-            >
-              {msg.text}
-            </Message>
-          )) || <NoMessage>No Messages Found</NoMessage>}
-        </MessagesContainer>
-        <InputContainer onSubmit={sendMessage}>
-          <Input
-            type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Type a message..."
-            required
-          />
-          <Button type="submit">Send</Button>
-        </InputContainer>
+        {selectedUser ? (
+          <>
+            <ChatHeader>
+              <ChatUserInfo>
+                <FaUserCircle size={35} />
+                <ChatUserName>{selectedUser.name}</ChatUserName>
+              </ChatUserInfo>
+              <FaEllipsisV />
+            </ChatHeader>
+            <MessagesContainer>
+              {messages && messages.length > 0 ? (
+                messages?.map((message, idx) => (
+                  <Message
+                    key={idx}
+                    className={message.sender === senderId ? 'sent' : 'received'}
+                  >
+                    {message.text}
+                  </Message>
+                ))
+              ) : (
+                <NoMessage>No messages yet</NoMessage>
+              )}
+            </MessagesContainer>
+            <InputContainer onSubmit={sendMessage}>
+              <Input
+                type="text"
+                placeholder="Type your message..."
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+              <IconButton>
+                <FaArrowRight />
+              </IconButton>
+            </InputContainer>
+          </>
+        ) : (
+          <NoMessage>Select a user to start chatting</NoMessage>
+        )}
       </ChatArea>
     </ChatContainer>
   );
